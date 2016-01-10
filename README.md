@@ -1,0 +1,2 @@
+# blindSqli
+python blindSqli tool
